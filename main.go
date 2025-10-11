@@ -11,13 +11,16 @@ const fileRootPath string = "."
 
 func main() {
 	serveMux := http.NewServeMux()
+	apiCfg := apiConfig{}
 
 	// Create readiness endpoint
-	serveMux.HandleFunc("/healthz", readinessHandler)
+	serveMux.HandleFunc("GET /healthz", readinessHandler)
+	serveMux.HandleFunc("GET /metrics", apiCfg.displayHitsHandler)
+	serveMux.HandleFunc("POST /reset", apiCfg.resetHitsHandler)
 
 	// Create fileserver endpoint
-	fs := http.FileServer(http.Dir(fileRootPath))
-	serveMux.Handle("/app/", http.StripPrefix("/app/", fs))
+	fs := http.StripPrefix("/app/", http.FileServer(http.Dir(fileRootPath)))
+	serveMux.Handle("/app/", apiCfg.mwMetricsInc(fs))
 
 	// Construct server
 	server := http.Server{
@@ -30,12 +33,7 @@ func main() {
 	// Server
 	err := server.ListenAndServe()
 	if err != nil {
+		fmt.Print(err)
 		log.Fatal("server had an error")
 	}
-}
-
-func readinessHandler(writer http.ResponseWriter, request *http.Request) {
-	writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	writer.WriteHeader(http.StatusOK)
-	writer.Write([]byte("OK\n"))
 }
