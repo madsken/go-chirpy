@@ -1,0 +1,24 @@
+@hostname = http://localhost:8080
+
+get {{hostname}}/app/
+
+###
+
+get {{hostname}}/api/healthz
+
+###
+
+get {{hostname}}/admin/metrics
+
+###
+
+post {{hostname}}/admin/reset
+
+
+###
+post http://localhost:8080/api/validate_chirp
+Content-Type: application/json
+
+{
+    "body": "aosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifhaosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifhaosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifhaosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifh"
+}

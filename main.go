@@ -14,9 +14,10 @@ func main() {
 	apiCfg := apiConfig{}
 
 	// Create readiness endpoint
-	serveMux.HandleFunc("GET /healthz", readinessHandler)
-	serveMux.HandleFunc("GET /metrics", apiCfg.displayHitsHandler)
-	serveMux.HandleFunc("POST /reset", apiCfg.resetHitsHandler)
+	serveMux.HandleFunc("GET /api/healthz", readinessHandler)
+	serveMux.HandleFunc("GET /admin/metrics", apiCfg.displayHitsHandler)
+	serveMux.HandleFunc("POST /admin/reset", apiCfg.resetHitsHandler)
+	serveMux.HandleFunc("POST /api/validate_chirp", validateChirp)
 
 	// Create fileserver endpoint
 	fs := http.StripPrefix("/app/", http.FileServer(http.Dir(fileRootPath)))
