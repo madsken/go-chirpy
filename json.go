@@ -10,7 +10,6 @@ func respondWithError(writer http.ResponseWriter, statusCode int, msg string, er
 	if err != nil {
 		log.Println(err)
 	}
-	log.Printf("Responding with status code: %d", statusCode)
 	type errorResponse struct {
 		Error string `json:"error"`
 	}

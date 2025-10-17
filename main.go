@@ -35,6 +35,7 @@ func initServerHandlers(apiCfg *apiConfig) *http.ServeMux {
 
 	// users endpoint
 	serveMux.HandleFunc("POST /api/users", apiCfg.createUser)
+	serveMux.HandleFunc("POST /api/login", apiCfg.loginUser)
 
 	// chirps endpoint
 	serveMux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
