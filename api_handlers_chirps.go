@@ -38,17 +38,54 @@ func (cfg *apiConfig) createChirp(writer http.ResponseWriter, request *http.Requ
 	}
 	chirp.Body = cleanProfanity(chirp.Body)
 
-	chirpResp := Chirp{
+	respondWithJSON(writer, http.StatusCreated, Chirp{
 		ID:        chirp.ID,
 		CreateAt:  chirp.CreatedAt,
 		UpdatedAt: chirp.UpdatedAt,
 		Body:      chirp.Body,
 		UserID:    chirp.UserID,
-	}
-
-	respondWithJSON(writer, http.StatusCreated, chirpResp)
+	})
 }
 
 func (cfg *apiConfig) getChirps(writer http.ResponseWriter, request *http.Request) {
+	chirps, err := cfg.dbQueries.GetAllChirps(request.Context())
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Error fetching chirps", err)
+		return
+	}
 
+	chirpsResp := []Chirp{}
+	for _, chirp := range chirps {
+		chirpsResp = append(chirpsResp, Chirp{
+			ID:        chirp.ID,
+			CreateAt:  chirp.CreatedAt,
+			UpdatedAt: chirp.UpdatedAt,
+			Body:      chirp.Body,
+			UserID:    chirp.UserID,
+		})
+	}
+
+	respondWithJSON(writer, http.StatusOK, chirpsResp)
+}
+
+func (cfg *apiConfig) getChirp(writer http.ResponseWriter, request *http.Request) {
+	cID, err := uuid.Parse(request.PathValue("chirpID"))
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Error parsing UUID", err)
+		return
+	}
+
+	chirp, err := cfg.dbQueries.GetChirp(request.Context(), cID)
+	if err != nil {
+		respondWithError(writer, http.StatusNotFound, "Chirp not found", err)
+		return
+	}
+
+	respondWithJSON(writer, http.StatusOK, Chirp{
+		ID:        chirp.ID,
+		CreateAt:  chirp.CreatedAt,
+		UpdatedAt: chirp.UpdatedAt,
+		Body:      chirp.Body,
+		UserID:    chirp.UserID,
+	})
 }
