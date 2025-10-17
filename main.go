@@ -55,7 +55,11 @@ func main() {
 		log.Fatalf("Error initalising database: %s", err)
 	}
 
-	apiCfg := apiConfig{dbQueries: dbQueries, platform: os.Getenv("PLATFORM")}
+	apiCfg := apiConfig{
+		dbQueries: dbQueries,
+		platform:  os.Getenv("PLATFORM"),
+		secret:    os.Getenv("SECRET"),
+	}
 	serveMux := initServerHandlers(&apiCfg)
 
 	// Construct server

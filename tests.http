@@ -30,5 +30,15 @@ post {{hostname}}/api/users
 Content-Type: application/json
 
 {
-    "email": "test@email.com"
+  "email": "saul@bettercall.com",
+  "password": "123456"
+}
+
+###
+post {{hostname}}/api/login
+Content-Type: application/json
+
+{
+  "email": "saul@bettercall.com",
+  "password": "123456"
 }

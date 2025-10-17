@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/madsken/go-chirpy/internal/auth"
 	"github.com/madsken/go-chirpy/internal/database"
@@ -49,8 +50,9 @@ func (cfg *apiConfig) createUser(writer http.ResponseWriter, request *http.Reque
 
 func (cfg *apiConfig) loginUser(writer http.ResponseWriter, request *http.Request) {
 	type reqJson struct {
-		Password string `json:"password"`
-		Email    string `json:"email"`
+		Password  string `json:"password"`
+		Email     string `json:"email"`
+		ExpiresIn int    `json:"expires_in_seconds"`
 	}
 	reqData := reqJson{}
 
@@ -77,10 +79,20 @@ func (cfg *apiConfig) loginUser(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	respondWithJSON(writer, http.StatusOK, User{
+	if reqData.ExpiresIn < 1 || reqData.ExpiresIn > 3600 {
+		reqData.ExpiresIn = 3600
+	}
+	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(reqData.ExpiresIn)*time.Second)
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "error creating token", err)
+		return
+	}
+
+	respondWithJSON(writer, http.StatusOK, UserLogin{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 		Email:     user.Email,
+		Token:     token,
 	})
 }

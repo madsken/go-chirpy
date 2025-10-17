@@ -5,18 +5,23 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/madsken/go-chirpy/internal/auth"
 	"github.com/madsken/go-chirpy/internal/database"
 )
 
 func (cfg *apiConfig) createChirp(writer http.ResponseWriter, request *http.Request) {
 	type reqJson struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
-	reqData := reqJson{}
 
+	userID, err := validatePost(request, cfg.secret)
+	if err != nil {
+		respondWithError(writer, http.StatusUnauthorized, "invalid token", err)
+	}
+
+	reqData := reqJson{}
 	decoder := json.NewDecoder(request.Body)
-	err := decoder.Decode(&reqData)
+	err = decoder.Decode(&reqData)
 	if err != nil {
 		respondWithError(writer, http.StatusInternalServerError, "Error decoding JSON", err)
 		return
@@ -24,7 +29,7 @@ func (cfg *apiConfig) createChirp(writer http.ResponseWriter, request *http.Requ
 
 	chirp, err := cfg.dbQueries.CreateChirp(request.Context(), database.CreateChirpParams{
 		Body:   reqData.Body,
-		UserID: reqData.UserID,
+		UserID: userID,
 	})
 	if err != nil {
 		respondWithError(writer, http.StatusInternalServerError, "Error creating chirp", err)
@@ -88,4 +93,12 @@ func (cfg *apiConfig) getChirp(writer http.ResponseWriter, request *http.Request
 		Body:      chirp.Body,
 		UserID:    chirp.UserID,
 	})
+}
+
+func validatePost(request *http.Request, secretToken string) (uuid.UUID, error) {
+	token, err := auth.GetBearerToken(request.Header)
+	if err != nil {
+		return uuid.Nil, nil
+	}
+	return auth.ValidateJWT(token, secretToken)
 }
