@@ -15,10 +15,20 @@ get {{hostname}}/admin/metrics
 post {{hostname}}/admin/reset
 
 
-###
-post http://localhost:8080/api/validate_chirp
+### validate_chirp - too long
+post {{hostname}}/api/chirps
 Content-Type: application/json
 
 {
-    "body": "aosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifhaosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifhaosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifhaosidhopfhsdiufghipufhsaikfhweiufhawifhseiuthewiufhweifhweiufhsdifhsdifh"
+  "body": "Hello kerfuffle world",
+  "user_id": "61848fb6-1af4-4daf-ad8b-492bf76837e4"
+}
+
+
+### create user
+post {{hostname}}/api/users
+Content-Type: application/json
+
+{
+    "email": "test@email.com"
 }

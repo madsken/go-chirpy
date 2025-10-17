@@ -1,27 +1,60 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
+	"github.com/madsken/go-chirpy/internal/database"
 )
 
 const port string = "8080"
 const fileRootPath string = "."
 
-func main() {
-	serveMux := http.NewServeMux()
-	apiCfg := apiConfig{}
+func initDatabase() (*database.Queries, error) {
+	godotenv.Load(".env")
+	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		return nil, err
+	}
 
-	// Create readiness endpoint
+	return database.New(db), nil
+}
+
+func initServerHandlers(apiCfg *apiConfig) *http.ServeMux {
+	serveMux := http.NewServeMux()
+
 	serveMux.HandleFunc("GET /api/healthz", readinessHandler)
 	serveMux.HandleFunc("GET /admin/metrics", apiCfg.displayHitsHandler)
 	serveMux.HandleFunc("POST /admin/reset", apiCfg.resetHitsHandler)
-	serveMux.HandleFunc("POST /api/validate_chirp", validateChirp)
+
+	// users endpoint
+	serveMux.HandleFunc("POST /api/users", apiCfg.createUser)
+
+	// chirps endpoint
+	serveMux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
+	serveMux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
 
 	// Create fileserver endpoint
 	fs := http.StripPrefix("/app/", http.FileServer(http.Dir(fileRootPath)))
 	serveMux.Handle("/app/", apiCfg.mwMetricsInc(fs))
+
+	return serveMux
+}
+
+func main() {
+	dbQueries, err := initDatabase()
+	if err != nil {
+		log.Fatalf("Error initalising database: %s", err)
+	}
+
+	apiCfg := apiConfig{dbQueries: dbQueries, platform: os.Getenv("PLATFORM")}
+	serveMux := initServerHandlers(&apiCfg)
 
 	// Construct server
 	server := http.Server{
@@ -32,7 +65,7 @@ func main() {
 	fmt.Printf("Starting server on port %s\n", port)
 
 	// Server
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != nil {
 		fmt.Print(err)
 		log.Fatal("server had an error")

@@ -5,10 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"sync/atomic"
+
+	"github.com/madsken/go-chirpy/internal/database"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	dbQueries      *database.Queries
+	platform       string
 }
 
 func (cfg *apiConfig) displayHitsHandler(writer http.ResponseWriter, request *http.Request) {
@@ -29,9 +33,19 @@ func (cfg *apiConfig) displayHitsHandler(writer http.ResponseWriter, request *ht
 
 func (cfg *apiConfig) resetHitsHandler(writer http.ResponseWriter, request *http.Request) {
 	writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	if cfg.platform != "dev" {
+		writer.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	writer.WriteHeader(http.StatusOK)
 
 	cfg.fileserverHits.Store(0)
+
+	err := cfg.dbQueries.DeleteAllUsers(request.Context())
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Error deleting all users", err)
+	}
 }
 
 // mw to increment hits on /app/ hits
