@@ -45,6 +45,7 @@ func (cfg *apiConfig) resetHitsHandler(writer http.ResponseWriter, request *http
 	err := cfg.dbQueries.DeleteAllUsers(request.Context())
 	if err != nil {
 		respondWithError(writer, http.StatusInternalServerError, "Error deleting all users", err)
+		return
 	}
 }
 

@@ -50,9 +50,8 @@ func (cfg *apiConfig) createUser(writer http.ResponseWriter, request *http.Reque
 
 func (cfg *apiConfig) loginUser(writer http.ResponseWriter, request *http.Request) {
 	type reqJson struct {
-		Password  string `json:"password"`
-		Email     string `json:"email"`
-		ExpiresIn int    `json:"expires_in_seconds"`
+		Password string `json:"password"`
+		Email    string `json:"email"`
 	}
 	reqData := reqJson{}
 
@@ -79,20 +78,33 @@ func (cfg *apiConfig) loginUser(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	if reqData.ExpiresIn < 1 || reqData.ExpiresIn > 3600 {
-		reqData.ExpiresIn = 3600
-	}
-	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(reqData.ExpiresIn)*time.Second)
+	token, err := auth.MakeJWT(user.ID, cfg.secret)
 	if err != nil {
 		respondWithError(writer, http.StatusInternalServerError, "error creating token", err)
 		return
 	}
 
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "error creating refresh token", err)
+		return
+	}
+	_, err = cfg.dbQueries.CreateRefreshToken(request.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(60 * 24 * time.Hour),
+	})
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "error creating refresh token in database", err)
+		return
+	}
+
 	respondWithJSON(writer, http.StatusOK, UserLogin{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     token,
+		ID:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	})
 }

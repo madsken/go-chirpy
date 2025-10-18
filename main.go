@@ -42,6 +42,10 @@ func initServerHandlers(apiCfg *apiConfig) *http.ServeMux {
 	serveMux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
 	serveMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirp)
 
+	// refresh token endpoint
+	serveMux.HandleFunc("POST /api/refresh", apiCfg.refresh)
+	serveMux.HandleFunc("POST /api/revoke", apiCfg.revoke)
+
 	// Create fileserver endpoint
 	fs := http.StripPrefix("/app/", http.FileServer(http.Dir(fileRootPath)))
 	serveMux.Handle("/app/", apiCfg.mwMetricsInc(fs))

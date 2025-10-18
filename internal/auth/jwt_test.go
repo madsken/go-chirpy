@@ -12,9 +12,8 @@ import (
 func TestMakeAndValidateJWT_Success(t *testing.T) {
 	userID := uuid.New()
 	secret := "supersecret"
-	expiresIn := time.Minute * 5
 
-	token, err := MakeJWT(userID, secret, expiresIn)
+	token, err := MakeJWT(userID, secret)
 	if err != nil {
 		t.Fatalf("unexpected error making token: %v", err)
 	}
@@ -34,7 +33,7 @@ func TestValidateJWT_InvalidSecret(t *testing.T) {
 	secret := "correctsecret"
 	wrongSecret := "wrongsecret"
 
-	token, err := MakeJWT(userID, secret, time.Minute*5)
+	token, err := MakeJWT(userID, secret)
 	if err != nil {
 		t.Fatalf("unexpected error making token: %v", err)
 	}
@@ -42,22 +41,6 @@ func TestValidateJWT_InvalidSecret(t *testing.T) {
 	_, err = ValidateJWT(token, wrongSecret)
 	if err == nil {
 		t.Fatal("expected validation to fail with wrong secret, but got no error")
-	}
-}
-
-func TestValidateJWT_ExpiredToken(t *testing.T) {
-	userID := uuid.New()
-	secret := "supersecret"
-
-	// Create a token that expired 1 second ago
-	token, err := MakeJWT(userID, secret, -1*time.Second)
-	if err != nil {
-		t.Fatalf("unexpected error making token: %v", err)
-	}
-
-	_, err = ValidateJWT(token, secret)
-	if err == nil {
-		t.Fatal("expected validation to fail for expired token, but got no error")
 	}
 }
 

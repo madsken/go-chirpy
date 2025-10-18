@@ -17,6 +17,7 @@ func (cfg *apiConfig) createChirp(writer http.ResponseWriter, request *http.Requ
 	userID, err := validatePost(request, cfg.secret)
 	if err != nil {
 		respondWithError(writer, http.StatusUnauthorized, "invalid token", err)
+		return
 	}
 
 	reqData := reqJson{}
