@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/madsken/go-chirpy/internal/database"
@@ -55,6 +56,12 @@ func (cfg *apiConfig) createChirp(writer http.ResponseWriter, request *http.Requ
 }
 
 func (cfg *apiConfig) getChirps(writer http.ResponseWriter, request *http.Request) {
+	authorID, _ := uuid.Parse(request.URL.Query().Get("author_id"))
+	sortBy := request.URL.Query().Get("sort")
+	if sortBy == "" {
+		sortBy = "asc"
+	}
+
 	chirps, err := cfg.dbQueries.GetAllChirps(request.Context())
 	if err != nil {
 		respondWithError(writer, http.StatusInternalServerError, "Error fetching chirps", err)
@@ -63,6 +70,9 @@ func (cfg *apiConfig) getChirps(writer http.ResponseWriter, request *http.Reques
 
 	chirpsResp := []Chirp{}
 	for _, chirp := range chirps {
+		if chirp.UserID != authorID && authorID != uuid.Nil {
+			continue
+		}
 		chirpsResp = append(chirpsResp, Chirp{
 			ID:        chirp.ID,
 			CreateAt:  chirp.CreatedAt,
@@ -71,6 +81,13 @@ func (cfg *apiConfig) getChirps(writer http.ResponseWriter, request *http.Reques
 			UserID:    chirp.UserID,
 		})
 	}
+
+	sort.Slice(chirpsResp, func(i, j int) bool {
+		if sortBy == "desc" {
+			return chirpsResp[i].CreateAt.After(chirpsResp[j].CreateAt)
+		}
+		return chirpsResp[i].CreateAt.Before(chirpsResp[j].CreateAt)
+	})
 
 	respondWithJSON(writer, http.StatusOK, chirpsResp)
 }

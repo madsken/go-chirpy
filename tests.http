@@ -42,3 +42,6 @@ Content-Type: application/json
   "email": "saul@bettercall.com",
   "password": "123456"
 }
+
+###
+get {{hostname}}/api/chirps
