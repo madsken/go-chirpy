@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -93,4 +95,40 @@ func (cfg *apiConfig) getChirp(writer http.ResponseWriter, request *http.Request
 		Body:      chirp.Body,
 		UserID:    chirp.UserID,
 	})
+}
+
+func (cfg *apiConfig) deleteChirp(writer http.ResponseWriter, request *http.Request) {
+	userID, err := validateToken(request, cfg.secret)
+	if err != nil {
+		respondWithError(writer, http.StatusUnauthorized, "invalid token", err)
+		return
+	}
+	cID, err := uuid.Parse(request.PathValue("chirpID"))
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "Error parsing UUID", err)
+		return
+	}
+
+	chirpData, err := cfg.dbQueries.GetChirp(request.Context(), cID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			respondWithError(writer, http.StatusNotFound, "chirp not in database", err)
+			return
+		}
+		respondWithError(writer, http.StatusInternalServerError, "error getting chirp from database", err)
+		return
+	}
+
+	if chirpData.UserID != userID {
+		respondWithError(writer, http.StatusForbidden, "user does not own chirp", err)
+		return
+	}
+
+	err = cfg.dbQueries.DeleteChirp(request.Context(), cID)
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "failed to delete chirp", err)
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
 }

@@ -42,10 +42,14 @@ func initServerHandlers(apiCfg *apiConfig) *http.ServeMux {
 	serveMux.HandleFunc("POST /api/chirps", apiCfg.createChirp)
 	serveMux.HandleFunc("GET /api/chirps", apiCfg.getChirps)
 	serveMux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.getChirp)
+	serveMux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.deleteChirp)
 
 	// refresh token endpoint
 	serveMux.HandleFunc("POST /api/refresh", apiCfg.refresh)
 	serveMux.HandleFunc("POST /api/revoke", apiCfg.revoke)
+
+	// polka webhook
+	serveMux.HandleFunc("POST /api/polka/webhooks", apiCfg.polkaWebHook)
 
 	// Create fileserver endpoint
 	fs := http.StripPrefix("/app/", http.FileServer(http.Dir(fileRootPath)))
@@ -64,6 +68,7 @@ func main() {
 		dbQueries: dbQueries,
 		platform:  os.Getenv("PLATFORM"),
 		secret:    os.Getenv("SECRET"),
+		polkaKey:  os.Getenv("POLKA_KEY"),
 	}
 	serveMux := initServerHandlers(&apiCfg)
 

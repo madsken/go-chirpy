@@ -13,6 +13,7 @@ type apiConfig struct {
 	dbQueries      *database.Queries
 	platform       string
 	secret         string
+	polkaKey       string
 }
 
 func (cfg *apiConfig) displayHitsHandler(writer http.ResponseWriter, request *http.Request) {

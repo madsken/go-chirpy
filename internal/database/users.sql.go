@@ -20,7 +20,7 @@ VALUES (
     $1,
     $2
 )
-RETURNING id, created_at, updated_at, email, password
+RETURNING id, created_at, updated_at, email, password, is_chirpy_red
 `
 
 type CreateUserParams struct {
@@ -37,6 +37,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -51,7 +52,7 @@ func (q *Queries) DeleteAllUsers(ctx context.Context) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, created_at, updated_at, email, password FROM users WHERE email = $1
+SELECT id, created_at, updated_at, email, password, is_chirpy_red FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -63,6 +64,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -71,7 +73,7 @@ const updateEmailAndPassword = `-- name: UpdateEmailAndPassword :one
 UPDATE users
 SET email = $1, password = $2, updated_at = NOW()
 WHERE id = $3
-RETURNING id, created_at, updated_at, email, password
+RETURNING id, created_at, updated_at, email, password, is_chirpy_red
 `
 
 type UpdateEmailAndPasswordParams struct {
@@ -89,6 +91,33 @@ func (q *Queries) UpdateEmailAndPassword(ctx context.Context, arg UpdateEmailAnd
 		&i.UpdatedAt,
 		&i.Email,
 		&i.Password,
+		&i.IsChirpyRed,
+	)
+	return i, err
+}
+
+const upgradeUserChirpyRedStatus = `-- name: UpgradeUserChirpyRedStatus :one
+UPDATE users
+SET is_chirpy_red = $1, updated_at = NOW()
+WHERE id = $2
+RETURNING id, created_at, updated_at, email, password, is_chirpy_red
+`
+
+type UpgradeUserChirpyRedStatusParams struct {
+	IsChirpyRed bool
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpgradeUserChirpyRedStatus(ctx context.Context, arg UpgradeUserChirpyRedStatusParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, upgradeUserChirpyRedStatus, arg.IsChirpyRed, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
