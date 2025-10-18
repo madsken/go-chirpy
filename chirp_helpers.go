@@ -1,7 +1,11 @@
 package main
 
 import (
+	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/madsken/go-chirpy/internal/auth"
 )
 
 var badWords = []string{
@@ -26,4 +30,12 @@ func cleanProfanity(body string) string {
 	}
 
 	return strings.Join(words, " ")
+}
+
+func validateToken(request *http.Request, secretToken string) (uuid.UUID, error) {
+	token, err := auth.GetBearerToken(request.Header)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return auth.ValidateJWT(token, secretToken)
 }

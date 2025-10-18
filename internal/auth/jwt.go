@@ -61,7 +61,7 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 	headerParts := strings.Fields(authHeader)
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
-		return "", fmt.Errorf("invalid auth header: %s", headerParts[0])
+		return "", fmt.Errorf("invalid auth header")
 	}
 
 	return headerParts[1], nil

@@ -48,6 +48,50 @@ func (cfg *apiConfig) createUser(writer http.ResponseWriter, request *http.Reque
 	respondWithJSON(writer, http.StatusCreated, response)
 }
 
+func (cfg *apiConfig) updateUser(writer http.ResponseWriter, request *http.Request) {
+	userID, err := validateToken(request, cfg.secret)
+	if err != nil {
+		respondWithError(writer, http.StatusUnauthorized, "invalid token", err)
+		return
+	}
+
+	type reqJson struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+
+	reqData := reqJson{}
+	decoder := json.NewDecoder(request.Body)
+	err = decoder.Decode(&reqData)
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "error decoding json", err)
+		return
+	}
+
+	hashedPw, err := auth.HashPassword(reqData.Password)
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "error hashing password", err)
+		return
+	}
+
+	updatedRow, err := cfg.dbQueries.UpdateEmailAndPassword(request.Context(), database.UpdateEmailAndPasswordParams{
+		Email:    reqData.Email,
+		Password: hashedPw,
+		ID:       userID,
+	})
+	if err != nil {
+		respondWithError(writer, http.StatusInternalServerError, "error updating database with new password and email", err)
+		return
+	}
+
+	respondWithJSON(writer, http.StatusOK, User{
+		ID:        updatedRow.ID,
+		CreatedAt: updatedRow.CreatedAt,
+		UpdatedAt: updatedRow.UpdatedAt,
+		Email:     updatedRow.Email,
+	})
+}
+
 func (cfg *apiConfig) loginUser(writer http.ResponseWriter, request *http.Request) {
 	type reqJson struct {
 		Password string `json:"password"`

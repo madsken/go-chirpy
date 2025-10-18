@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/madsken/go-chirpy/internal/auth"
 	"github.com/madsken/go-chirpy/internal/database"
 )
 
@@ -14,7 +13,7 @@ func (cfg *apiConfig) createChirp(writer http.ResponseWriter, request *http.Requ
 		Body string `json:"body"`
 	}
 
-	userID, err := validatePost(request, cfg.secret)
+	userID, err := validateToken(request, cfg.secret)
 	if err != nil {
 		respondWithError(writer, http.StatusUnauthorized, "invalid token", err)
 		return
@@ -94,12 +93,4 @@ func (cfg *apiConfig) getChirp(writer http.ResponseWriter, request *http.Request
 		Body:      chirp.Body,
 		UserID:    chirp.UserID,
 	})
-}
-
-func validatePost(request *http.Request, secretToken string) (uuid.UUID, error) {
-	token, err := auth.GetBearerToken(request.Header)
-	if err != nil {
-		return uuid.Nil, nil
-	}
-	return auth.ValidateJWT(token, secretToken)
 }
